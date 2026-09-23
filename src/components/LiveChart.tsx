@@ -1,7 +1,7 @@
 import { memo, useEffect, useRef } from 'react';
 import uPlot from 'uplot';
 import 'uplot/dist/uPlot.min.css';
-import type { SeriesData } from '../utils/helpers';
+import { formatTime, type SeriesData } from '../utils/helpers';
 
 interface LiveChartProps {
   readonly data: SeriesData;
@@ -14,28 +14,39 @@ function cssVar(el: Element, name: string, fallback: string): string {
 }
 
 function buildOptions(el: HTMLElement, width: number, height: number): uPlot.Options {
-  const ink = cssVar(el, '--text-muted', '#898781');
-  const grid = cssVar(el, '--chart-grid', '#e1e0d9');
-  const s1 = cssVar(el, '--series-1', '#2a78d6');
-  const s2 = cssVar(el, '--series-2', '#eb6834');
+  const ink = cssVar(el, '--text-muted', '#8a8a99');
+  const grid = cssVar(el, '--chart-grid', '#ececf1');
+  const s1 = cssVar(el, '--series-1', '#7b4fc6');
+  const s2 = cssVar(el, '--series-2', '#e07a2f');
+  const font = `11px ${cssVar(el, '--font-sans', 'system-ui, sans-serif')}`;
   const axis: uPlot.Axis = {
     stroke: ink,
-    grid: { stroke: grid, width: 1 },
+    grid: { stroke: grid, width: 1, dash: [2, 3] },
     ticks: { show: false },
-    font: '12px system-ui, sans-serif',
+    font,
+    gap: 4,
   };
   const fmt = (_u: uPlot, v: number | null) => (v == null ? '—' : `${v.toFixed(1)} ms`);
+  // Lines only, joined across empty buckets. A marker appears only when a series has a
+  // single point, which would otherwise be invisible.
+  const points: uPlot.Series.Points = {
+    show: (u, sidx) => (u.data[sidx] ?? []).filter((v) => v != null).length <= 1,
+  };
   return {
     width,
     height,
-    padding: [12, 8, 0, 0],
+    padding: [8, 8, 0, 0],
     cursor: { drag: { x: false, y: false }, points: { size: 8 } },
     scales: { x: { time: true }, y: { range: (_u, _min, max) => [0, Math.max(50, max * 1.1)] } },
-    axes: [axis, { ...axis, size: 56, values: (_u, vals) => vals.map((v) => `${v} ms`) }],
+    axes: [
+      // Single-line HH:MM:SS ticks (uPlot's default adds a second date line).
+      { ...axis, size: 26, values: (_u, vals) => vals.map((v) => formatTime(v * 1000)) },
+      { ...axis, size: 52, values: (_u, vals) => vals.map((v) => `${v} ms`) },
+    ],
     series: [
       {},
-      { label: 'Avg latency', stroke: s1, width: 2, spanGaps: false, value: fmt },
-      { label: 'Max latency', stroke: s2, width: 1.5, dash: [4, 3], value: fmt },
+      { label: 'avg latency', stroke: s1, width: 1.5, value: fmt, spanGaps: true, points },
+      { label: 'max latency', stroke: s2, width: 1, dash: [3, 2], value: fmt, spanGaps: true, points },
     ],
     legend: { live: true },
   };
@@ -46,7 +57,7 @@ function buildOptions(el: HTMLElement, width: number, height: number): uPlot.Opt
  * `setData`, which redraws one canvas and never reconciles DOM nodes per
  * point, so the chart stays smooth at any message rate.
  */
-export const LiveChart = memo(function LiveChart({ data, height = 340, label }: LiveChartProps) {
+export const LiveChart = memo(function LiveChart({ data, height = 260, label }: LiveChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const plotRef = useRef<uPlot | null>(null);
 
@@ -71,11 +82,16 @@ export const LiveChart = memo(function LiveChart({ data, height = 340, label }: 
     });
     ro.observe(el);
 
+    // Theme colours are baked into the canvas: rebuild when the OS scheme or the
+    // `data-theme` override changes.
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
     mq.addEventListener('change', create);
+    const themeObserver = new MutationObserver(create);
+    themeObserver.observe(document.documentElement, { attributeFilter: ['data-theme'] });
 
     return () => {
       ro.disconnect();
+      themeObserver.disconnect();
       mq.removeEventListener('change', create);
       plotRef.current?.destroy();
       plotRef.current = null;

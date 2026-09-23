@@ -1,7 +1,8 @@
-import { memo, type ReactNode } from 'react';
+import { memo } from 'react';
 import type { StreamStats } from '../types/stream';
-import { formatCompact, formatMs, formatNumber, type KpiSummary } from '../utils/helpers';
-import { ServiceStatusLabel } from './StatusBadge';
+import { formatCompact, formatNumber, type KpiSummary } from '../utils/helpers';
+
+type Tone = 'neutral' | 'ok' | 'warn' | 'bad';
 
 interface KpiCardsProps {
   readonly kpis: KpiSummary;
@@ -11,26 +12,38 @@ interface KpiCardsProps {
   readonly capacity: number;
 }
 
-interface KpiCardProps {
+interface QueryValueProps {
   readonly label: string;
   readonly value: string;
-  readonly detail?: ReactNode;
-  readonly tone?: 'default' | 'warn' | 'bad';
+  readonly unit?: string | undefined;
+  readonly foot?: string | undefined;
+  readonly tone?: Tone;
 }
 
-const KpiCard = memo(function KpiCard({ label, value, detail, tone = 'default' }: KpiCardProps) {
+/** A single-number widget. The background changes with the threshold (tone). */
+const QueryValue = memo(function QueryValue({ label, value, unit, foot, tone = 'neutral' }: QueryValueProps) {
   return (
-    <div className={`kpi kpi--${tone}`}>
-      <p className="kpi__label">{label}</p>
-      <p className="kpi__value">{value}</p>
-      {detail && <p className="kpi__detail">{detail}</p>}
+    <div className={`qv qv--${tone}`}>
+      <p className="qv__title">{label}</p>
+      <p className="qv__value">
+        {value}
+        {unit && <span className="qv__unit">{unit}</span>}
+      </p>
+      {foot && <p className="qv__foot">{foot}</p>}
     </div>
   );
 });
 
 const dash = '—';
 
-/** KPI row derived from live data. Each card is memoised, so unchanged cards skip re-rendering. */
+function threshold(value: number | null, warnAt: number, badAt: number): Tone {
+  if (value === null) return 'neutral';
+  return value >= badAt ? 'bad' : value >= warnAt ? 'warn' : 'ok';
+}
+
+const oneDecimal = (n: number) => formatNumber(Math.round(n * 10) / 10);
+
+/** Row of query-value widgets derived from live data. Unchanged widgets skip re-rendering. */
 export const KpiCards = memo(function KpiCards({
   kpis,
   stats,
@@ -38,46 +51,40 @@ export const KpiCards = memo(function KpiCards({
   bufferUsed,
   capacity,
 }: KpiCardsProps) {
-  const errorTone =
-    kpis.errorRatePct === null ? 'default' : kpis.errorRatePct >= 10 ? 'bad' : kpis.errorRatePct >= 3 ? 'warn' : 'default';
   const rejected = stats.malformed + stats.dropped + stats.duplicates;
-
   return (
-    <div className="kpis">
-      <KpiCard
+    <div className="qvs">
+      <QueryValue
         label="Throughput"
-        value={`${formatNumber(stats.ratePerSec)}/s`}
-        detail={`${formatCompact(stats.received)} received total`}
+        value={formatNumber(stats.ratePerSec)}
+        unit="evt/s"
+        foot={`${formatCompact(stats.received)} received`}
       />
-      <KpiCard label="Events in view" value={formatNumber(kpis.count)} detail={windowLabel} />
-      <KpiCard
+      <QueryValue label="Events in view" value={formatNumber(kpis.count)} foot={windowLabel} />
+      <QueryValue
         label="Avg latency"
-        value={kpis.avgLatencyMs === null ? dash : formatMs(kpis.avgLatencyMs)}
-        detail={kpis.p95LatencyMs === null ? 'p95 —' : `p95 ${formatMs(kpis.p95LatencyMs)}`}
+        value={kpis.avgLatencyMs === null ? dash : oneDecimal(kpis.avgLatencyMs)}
+        unit={kpis.avgLatencyMs === null ? undefined : 'ms'}
+        foot={windowLabel}
       />
-      <KpiCard
+      <QueryValue
+        label="p95 latency"
+        value={kpis.p95LatencyMs === null ? dash : oneDecimal(kpis.p95LatencyMs)}
+        unit={kpis.p95LatencyMs === null ? undefined : 'ms'}
+        foot="warn ≥ 200 · crit ≥ 400"
+        tone={threshold(kpis.p95LatencyMs, 200, 400)}
+      />
+      <QueryValue
         label="Error rate"
-        value={kpis.errorRatePct === null ? dash : `${formatNumber(kpis.errorRatePct)}%`}
-        detail={`${formatNumber(kpis.errorCount)} error/critical`}
-        tone={errorTone}
+        value={kpis.errorRatePct === null ? dash : oneDecimal(kpis.errorRatePct)}
+        unit={kpis.errorRatePct === null ? undefined : '%'}
+        foot={`${formatNumber(kpis.errorCount)} error/critical`}
+        tone={threshold(kpis.errorRatePct, 3, 10)}
       />
-      <KpiCard
-        label="Services"
-        value={`${kpis.statusCounts.ok}/${kpis.statusCounts.ok + kpis.statusCounts.degraded + kpis.statusCounts.down} healthy`}
-        detail={
-          <span className="kpi__statuses">
-            <ServiceStatusLabel status="ok" /> {kpis.statusCounts.ok}
-            <ServiceStatusLabel status="degraded" /> {kpis.statusCounts.degraded}
-            <ServiceStatusLabel status="down" /> {kpis.statusCounts.down}
-          </span>
-        }
-        tone={kpis.statusCounts.down > 0 ? 'bad' : kpis.statusCounts.degraded > 0 ? 'warn' : 'default'}
-      />
-      <KpiCard
+      <QueryValue
         label="Rejected frames"
         value={formatNumber(rejected)}
-        detail={`Buffer ${formatCompact(bufferUsed)}/${formatCompact(capacity)}`}
-        tone={rejected > 0 ? 'warn' : 'default'}
+        foot={`buffer ${formatCompact(bufferUsed)} / ${formatCompact(capacity)}`}
       />
     </div>
   );

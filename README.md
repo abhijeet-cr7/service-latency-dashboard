@@ -4,7 +4,7 @@ A real-time monitoring dashboard built with **React 19 + TypeScript + Vite**. Ev
 continuously, from a built-in simulated socket or a real WebSocket. The UI stays smooth, correct and safe
 under high-frequency updates, malformed/hostile data and a flapping connection.
 
-![stack](https://img.shields.io/badge/React-19-blue) ![ts](https://img.shields.io/badge/TypeScript-strict-blue) ![tests](https://img.shields.io/badge/tests-80%20passing-green)
+![stack](https://img.shields.io/badge/React-19-blue) ![ts](https://img.shields.io/badge/TypeScript-strict-blue) ![tests](https://img.shields.io/badge/tests-83%20passing-green)
 
 ---
 
@@ -23,7 +23,7 @@ backend is needed.
 | `npm run dev` | Dev server with HMR |
 | `npm run build` | Type-check (app + tests) and build for production into `dist/` |
 | `npm run preview` | Serve the production build **with a strict Content-Security-Policy** |
-| `npm test` | Run the Vitest suite (80 tests: unit, integration, render budget) |
+| `npm test` | Run the Vitest suite (83 tests: unit, integration, render budget) |
 | `PERF_REPORT=1 npm test` | Same, and print the render-budget measurements |
 | `npm run lint` | ESLint, including security rules (see below) |
 | `npm run typecheck` | `tsc -b --noEmit` |
@@ -59,18 +59,26 @@ Anything else is rejected and counted in **Rejected frames**.
 
 ## Using the dashboard
 
-- **Connection pill** (top right): *Connecting · Live · Paused · Reconnecting (with countdown and attempt) ·
-  Disconnected*, plus a **Retry now** button when relevant.
-- **Simulator bar** (only with the simulated feed): change the message rate from 5/s to **10,000/s**, **Drop
-  connection** to watch backoff and reconnect, **Stall feed** to leave the socket open but silent (the
-  stale-connection watchdog detects it and reconnects).
-- **Controls**: Pause/Resume, time window (30s / 1m / 5m / 15m / All buffered), severity filter chips,
-  text search, **buffer size** and **UI update interval**.
-- **KPIs**: throughput (events/s), events in view, avg and p95 latency, error rate, service health
-  (latest status per service), rejected frames and buffer fill.
-- **Latency chart**: avg (solid) and max (dashed) latency per time bucket, with hover readout.
-- **Recent events**: virtualized, newest first. If you scroll down to read, rows stay put and a
-  "↑ N new events" button appears.
+The UI follows the conventions of observability tools such as Datadog: dense, light-first (dark
+follows the OS), square widgets, and colour reserved for meaning.
+
+- **Top bar**: breadcrumb title, connection indicator (*Connecting · Live · Paused · Reconnecting ·
+  Disconnected*), a **time picker** (Past 30 Seconds → Entire Buffer), and the **Pause / Resume**
+  toggle. While paused, it shows how many events arrived.
+- **Banner**: appears only while reconnecting (with countdown and attempt) or disconnected, with
+  **Retry now**.
+- **Template-variable bar**: `$status` facet toggles, a search box, `$buffer` (in-memory cap) and
+  `$refresh` (UI commit interval). With the simulated feed, `$simulator rate` goes up to **10,000 evt/s**,
+  **Drop connection** triggers backoff and reconnect, and **Stall feed** leaves the socket open but
+  silent so the stale-connection watchdog kicks in.
+- **Query values**: throughput, events in view, avg latency, p95 latency and error rate (p95 and error
+  rate fill green / amber / red at their thresholds), plus rejected frames with buffer fill.
+- **Timeseries**: avg (solid) and max (dashed) latency per rollup interval, with a hover readout.
+- **Services by avg latency**: a top list with each service's current status, error count and a
+  latency bar.
+- **Event stream**: a log-explorer-style virtualized table (date · status · service · latency ·
+  message), newest first, with a severity bar per row. Scrolled away from the top, rows stay put and
+  "Show N new events" appears.
 
 ---
 
@@ -86,7 +94,8 @@ src/
 │   ├── EventsList.tsx       # virtualised, XSS-safe rendering
 │   ├── ConnectionBar.tsx
 │   ├── Loading.tsx
-│   ├── Controls.tsx  SimulatorPanel.tsx  Panel.tsx  EmptyState.tsx  StatusBadge.tsx  ErrorFallback.tsx
+│   ├── Controls.tsx  ServiceTopList.tsx  SimulatorPanel.tsx  Panel.tsx  Icons.tsx
+│   ├── EmptyState.tsx  StatusBadge.tsx  ErrorFallback.tsx
 ├── containers/            # (addition) connect store slices → components; no markup of their own
 │   ├── Dashboard.tsx  LivePanels.tsx  LiveConnectionBar.tsx  LiveControls.tsx  LiveSimulator.tsx
 ├── hooks/
@@ -150,6 +159,8 @@ props.
 3. **React wiring**: `useLiveStream`, provider, per-slice selectors.
 4. **Dashboard UI**: KPI cards, chart, virtualized list, connection bar, controls, loading, empty and
    error states, responsive styling (light/dark).
+7. **Visual redesign**: observability-tool styling (nav rail, time picker, template variables,
+   threshold query values, top list, log-explorer event stream).
 5. **Tests**: unit, integration (fake socket) and render-budget tests.
 6. **Hardening & docs**: CSP check on the production build, this README.
 
@@ -270,5 +281,5 @@ npm test
   **Web Worker** would take JSON parsing off the main thread at very high rates.
 - The store is hand-rolled (≈200 lines) rather than Zustand/Redux, to keep the batching and pause
   semantics explicit and testable. Zustand with `subscribeWithSelector` would be a reasonable swap.
-- The theme follows the OS (`prefers-color-scheme`). The CSS also supports a `data-theme` override if a
-  toggle is wanted.
+- The theme follows the OS (`prefers-color-scheme`). The CSS and the chart also respond to a `data-theme`
+  override if a toggle is wanted.

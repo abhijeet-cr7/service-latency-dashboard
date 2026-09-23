@@ -11,7 +11,7 @@ export const Loading = memo(function Loading({ label = 'Loading…', skeletonHei
   if (skeletonHeight !== undefined) {
     return (
       // Decorative placeholder: the panel's spinner (role=status) announces loading once.
-      <div className="skeleton" style={{ height: skeletonHeight }} aria-hidden="true" data-label={label} />
+      <div className="skeleton" style={{ height: skeletonHeight }} aria-hidden="true" />
     );
   }
   return (

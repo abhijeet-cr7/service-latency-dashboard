@@ -1,5 +1,12 @@
 import type { LiveEvent } from '../types/event';
-import { bucketSeries, computeKpis, filterEvents, lowerBoundByTs, readIntSetting } from './helpers';
+import {
+  bucketSeries,
+  computeKpis,
+  computeServiceStats,
+  filterEvents,
+  lowerBoundByTs,
+  readIntSetting,
+} from './helpers';
 
 const base: LiveEvent = {
   id: '0',
@@ -82,5 +89,19 @@ describe('readIntSetting', () => {
     expect(readIntSetting('abc', 5, 1, 10)).toBe(5);
     expect(readIntSetting('999', 5, 1, 10)).toBe(10);
     expect(readIntSetting('3.6', 5, 1, 10)).toBe(4);
+  });
+});
+
+describe('computeServiceStats', () => {
+  it('rolls up per service with latest status, sorted by avg latency desc', () => {
+    const rows = computeServiceStats([
+      ev(1, { source: 'a', latencyMs: 10, status: 'down', severity: 'error' }),
+      ev(2, { source: 'b', latencyMs: 50 }),
+      ev(3, { source: 'a', latencyMs: 30, status: 'ok' }),
+    ]);
+    expect(rows).toEqual([
+      { source: 'b', status: 'ok', count: 1, avgLatencyMs: 50, errorCount: 0 },
+      { source: 'a', status: 'ok', count: 2, avgLatencyMs: 20, errorCount: 1 },
+    ]);
   });
 });

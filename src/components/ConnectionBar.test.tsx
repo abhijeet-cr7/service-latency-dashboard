@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ConnectionInfo } from '../types/stream';
-import { ConnectionBar } from './ConnectionBar';
+import { ConnectionBanner, ConnectionBar } from './ConnectionBar';
 
 const info = (p: Partial<ConnectionInfo> = {}): ConnectionInfo => ({
   status: 'live',
@@ -19,50 +19,48 @@ describe('ConnectionBar', () => {
     ['reconnecting', 'Reconnecting'],
     ['error', 'Disconnected'],
   ] as const)('shows an explicit label for %s', (status, label) => {
-    render(
-      <ConnectionBar
-        status={status}
-        connection={info()}
-        pendingWhilePaused={0}
-        sourceLabel="feed"
-        onRetry={() => undefined}
-      />,
-    );
-    expect(screen.getByRole('status')).toHaveTextContent(label);
+    render(<ConnectionBar status={status} pendingWhilePaused={0} />);
+    expect(screen.getByRole('status', { name: /connection status/i })).toHaveTextContent(label);
   });
 
-  it('shows the retry countdown and a working Retry button while reconnecting', async () => {
+  it('reports how many events arrived while paused', () => {
+    render(<ConnectionBar status="paused" pendingWhilePaused={1234} />);
+    expect(screen.getByRole('status')).toHaveTextContent(/1,234 new events/);
+  });
+});
+
+describe('ConnectionBanner', () => {
+  it('renders nothing while the connection is healthy', () => {
+    const { container } = render(<ConnectionBanner connection={info()} onRetry={() => undefined} />);
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it('shows the message, retry countdown and a working Retry button while reconnecting', async () => {
     const onRetry = vi.fn();
     render(
-      <ConnectionBar
-        status="reconnecting"
+      <ConnectionBanner
         connection={info({
           status: 'reconnecting',
           attempt: 2,
           nextRetryAt: Date.now() + 3000,
           errorMessage: 'Connection lost. Reconnecting…',
         })}
-        pendingWhilePaused={0}
-        sourceLabel="feed"
         onRetry={onRetry}
       />,
     );
+    expect(screen.getByText(/connection lost/i)).toBeInTheDocument();
     expect(screen.getByText(/attempt 2, retrying in 3s/)).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: /retry now/i }));
     expect(onRetry).toHaveBeenCalledOnce();
   });
 
-  it('reports how many events arrived while paused', () => {
+  it('shows the generic error message when the feed is down', () => {
     render(
-      <ConnectionBar
-        status="paused"
-        connection={info()}
-        pendingWhilePaused={1234}
-        sourceLabel="feed"
+      <ConnectionBanner
+        connection={info({ status: 'error', errorMessage: 'Unable to reach the live feed.' })}
         onRetry={() => undefined}
       />,
     );
-    expect(screen.getByRole('status')).toHaveTextContent(/1,234 new events/);
-    expect(screen.queryByRole('button')).toBeNull();
+    expect(screen.getByText(/unable to reach the live feed/i)).toBeInTheDocument();
   });
 });

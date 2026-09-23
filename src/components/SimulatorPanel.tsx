@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useId } from 'react';
 import { formatNumber } from '../utils/helpers';
 
 const SIMULATOR_RATES = [5, 25, 250, 2_000, 10_000] as const;
@@ -10,33 +10,37 @@ interface SimulatorPanelProps {
   readonly onStall: () => void;
 }
 
-/** Demo-only controls for load and failure injection (shown only with the simulated stream). */
+/** Demo-only load and failure injection (shown only with the simulated stream). */
 export const SimulatorPanel = memo(function SimulatorPanel({
   rate,
   onRateChange,
   onDrop,
   onStall,
 }: SimulatorPanelProps) {
+  const id = useId();
   return (
     <div className="sim" role="group" aria-label="Stream simulator">
-      <span className="sim__tag">Simulator</span>
-      <div className="segmented" role="group" aria-label="Message rate">
-        {SIMULATOR_RATES.map((r) => (
-          <button
-            key={r}
-            type="button"
-            className="segmented__item"
-            aria-pressed={rate === r}
-            onClick={() => onRateChange(r)}
-          >
-            {formatNumber(r)}/s
-          </button>
-        ))}
+      <div className="tv">
+        <label className="tv__key" htmlFor={id}>
+          simulator rate
+        </label>
+        <select
+          id={id}
+          className="tv__select"
+          value={rate}
+          onChange={(e) => onRateChange(Number(e.target.value))}
+        >
+          {SIMULATOR_RATES.map((r) => (
+            <option key={r} value={r}>
+              {formatNumber(r)} evt/s
+            </option>
+          ))}
+        </select>
       </div>
-      <button type="button" className="btn btn--small" onClick={onDrop}>
+      <button type="button" className="btn btn--sm" onClick={onDrop}>
         Drop connection
       </button>
-      <button type="button" className="btn btn--small" onClick={onStall}>
+      <button type="button" className="btn btn--sm" onClick={onStall}>
         Stall feed
       </button>
     </div>

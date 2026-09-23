@@ -2,14 +2,62 @@ import { memo, useId } from 'react';
 import { BUFFER_SIZE_OPTIONS, FLUSH_INTERVAL_OPTIONS, TIME_WINDOWS } from '../config';
 import { SEVERITIES, type Severity } from '../types/event';
 import { formatNumber } from '../utils/helpers';
+import { ClockIcon, PauseIcon, PlayIcon, SearchIcon } from './Icons';
 
-interface ControlsProps {
-  readonly paused: boolean;
-  readonly onTogglePause: () => void;
-  readonly severities: ReadonlySet<Severity>;
-  readonly onToggleSeverity: (severity: Severity) => void;
+const MAX_QUERY_LENGTH = 80;
+const ALL = 'all';
+
+interface TimeControlsProps {
   readonly windowMs: number | null;
   readonly onWindowChange: (ms: number | null) => void;
+  readonly paused: boolean;
+  readonly onTogglePause: () => void;
+}
+
+/** Top-right time picker and the live Pause/Resume toggle. */
+export const TimeControls = memo(function TimeControls({
+  windowMs,
+  onWindowChange,
+  paused,
+  onTogglePause,
+}: TimeControlsProps) {
+  const id = useId();
+  return (
+    <div className="timectl">
+      <div className="timepicker">
+        <ClockIcon className="timepicker__icon" />
+        <label htmlFor={id} className="sr-only">
+          Time window
+        </label>
+        <select
+          id={id}
+          className="timepicker__select"
+          value={windowMs ?? ALL}
+          onChange={(e) => onWindowChange(e.target.value === ALL ? null : Number(e.target.value))}
+        >
+          {TIME_WINDOWS.map((w) => (
+            <option key={w.label} value={w.ms ?? ALL}>
+              {w.longLabel}
+            </option>
+          ))}
+        </select>
+      </div>
+      <button
+        type="button"
+        className={`btn btn--live ${paused ? 'is-paused' : ''}`}
+        onClick={onTogglePause}
+        aria-pressed={paused}
+      >
+        {paused ? <PlayIcon /> : <PauseIcon />}
+        {paused ? 'Resume' : 'Pause'}
+      </button>
+    </div>
+  );
+});
+
+interface FilterBarProps {
+  readonly severities: ReadonlySet<Severity>;
+  readonly onToggleSeverity: (severity: Severity) => void;
   readonly query: string;
   readonly onQueryChange: (query: string) => void;
   readonly bufferSize: number;
@@ -18,82 +66,49 @@ interface ControlsProps {
   readonly onFlushIntervalChange: (ms: number) => void;
 }
 
-const MAX_QUERY_LENGTH = 80;
-
-/** Toolbar: pause/resume, filters, time window, and performance tuning. Stateless. */
-export const Controls = memo(function Controls(props: ControlsProps) {
+/** Template-variable style filter bar: status facet, search, and performance tuning. Stateless. */
+export const FilterBar = memo(function FilterBar({
+  severities,
+  onToggleSeverity,
+  query,
+  onQueryChange,
+  bufferSize,
+  onBufferSizeChange,
+  flushIntervalMs,
+  onFlushIntervalChange,
+}: FilterBarProps) {
   const searchId = useId();
   const bufferId = useId();
   const flushId = useId();
-  const {
-    paused,
-    onTogglePause,
-    severities,
-    onToggleSeverity,
-    windowMs,
-    onWindowChange,
-    query,
-    onQueryChange,
-    bufferSize,
-    onBufferSizeChange,
-    flushIntervalMs,
-    onFlushIntervalChange,
-  } = props;
-
   return (
-    <div className="controls" role="toolbar" aria-label="Dashboard controls">
-      <button
-        type="button"
-        className={`btn ${paused ? 'btn--primary' : ''}`}
-        onClick={onTogglePause}
-        aria-pressed={paused}
-      >
-        <span aria-hidden="true">{paused ? '▶' : '❚❚'}</span> {paused ? 'Resume' : 'Pause'}
-      </button>
-
-      <div className="control-group" role="group" aria-label="Time window">
-        <span className="control-group__label">Window</span>
-        <div className="segmented">
-          {TIME_WINDOWS.map((w) => (
-            <button
-              key={w.label}
-              type="button"
-              className="segmented__item"
-              aria-pressed={windowMs === w.ms}
-              onClick={() => onWindowChange(w.ms)}
-            >
-              {w.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="control-group" role="group" aria-label="Severity filter">
-        <span className="control-group__label">Severity</span>
-        <div className="chips">
+    <div className="filters" role="toolbar" aria-label="Dashboard filters">
+      <div className="tv" role="group" aria-label="Severity filter">
+        <span className="tv__key">status</span>
+        <span className="tv__value tv__value--toggles">
           {SEVERITIES.map((s) => (
             <button
               key={s}
               type="button"
-              className={`chip chip--${s}`}
+              className={`toggle toggle--${s}`}
               aria-pressed={severities.has(s)}
               onClick={() => onToggleSeverity(s)}
             >
               {s}
             </button>
           ))}
-        </div>
+        </span>
       </div>
 
-      <div className="control-group control-group--grow">
-        <label className="control-group__label" htmlFor={searchId}>
-          Search
+      <div className="search">
+        <SearchIcon className="search__icon" />
+        <label htmlFor={searchId} className="sr-only">
+          Search events
         </label>
         <input
           id={searchId}
-          className="input"
+          className="search__input"
           type="search"
-          placeholder="Source or message…"
+          placeholder="Filter by service or message"
           value={query}
           maxLength={MAX_QUERY_LENGTH}
           autoComplete="off"
@@ -102,13 +117,13 @@ export const Controls = memo(function Controls(props: ControlsProps) {
         />
       </div>
 
-      <div className="control-group">
-        <label className="control-group__label" htmlFor={bufferId}>
-          Buffer
+      <div className="tv">
+        <label className="tv__key" htmlFor={bufferId}>
+          buffer
         </label>
         <select
           id={bufferId}
-          className="input"
+          className="tv__select"
           value={bufferSize}
           onChange={(e) => onBufferSizeChange(Number(e.target.value))}
         >
@@ -120,19 +135,19 @@ export const Controls = memo(function Controls(props: ControlsProps) {
         </select>
       </div>
 
-      <div className="control-group">
-        <label className="control-group__label" htmlFor={flushId}>
-          UI update
+      <div className="tv">
+        <label className="tv__key" htmlFor={flushId}>
+          refresh
         </label>
         <select
           id={flushId}
-          className="input"
+          className="tv__select"
           value={flushIntervalMs}
           onChange={(e) => onFlushIntervalChange(Number(e.target.value))}
         >
           {withCurrent(FLUSH_INTERVAL_OPTIONS, flushIntervalMs).map((n) => (
             <option key={n} value={n}>
-              every {n} ms
+              {n} ms
             </option>
           ))}
         </select>

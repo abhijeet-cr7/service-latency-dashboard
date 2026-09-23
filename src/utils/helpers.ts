@@ -172,3 +172,33 @@ export function bucketSeries(
   }
   return { x, avg, max };
 }
+
+export interface ServiceStats {
+  readonly source: string;
+  readonly status: ServiceStatus;
+  readonly count: number;
+  readonly avgLatencyMs: number;
+  readonly errorCount: number;
+}
+
+/** Per-service rollup for the Top List widget, sorted by average latency (worst first). */
+export function computeServiceStats(events: readonly LiveEvent[]): ServiceStats[] {
+  const acc = new Map<string, { status: ServiceStatus; count: number; sum: number; errors: number }>();
+  for (const e of events) {
+    const s = acc.get(e.source) ?? { status: e.status, count: 0, sum: 0, errors: 0 };
+    s.status = e.status; // events are oldest → newest, so the last write is the current status
+    s.count += 1;
+    s.sum += e.latencyMs;
+    if (e.severity === 'error' || e.severity === 'critical') s.errors += 1;
+    acc.set(e.source, s);
+  }
+  return [...acc.entries()]
+    .map(([source, s]) => ({
+      source,
+      status: s.status,
+      count: s.count,
+      avgLatencyMs: s.sum / s.count,
+      errorCount: s.errors,
+    }))
+    .sort((a, b) => b.avgLatencyMs - a.avgLatencyMs);
+}

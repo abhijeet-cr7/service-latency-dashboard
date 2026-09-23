@@ -1,28 +1,34 @@
 import { useCallback } from 'react';
-import { Controls } from '../components/Controls';
-import { useLiveSelector, useLiveStreamContext } from '../hooks/useLiveStream';
+import { FilterBar, TimeControls } from '../components/Controls';
 import type { EventFiltersApi } from '../hooks/useEventFilters';
+import { useLiveSelector, useLiveStreamContext } from '../hooks/useLiveStream';
 
-export function LiveControls({ filtersApi }: { filtersApi: EventFiltersApi }) {
+export function LiveTimeControls({ filtersApi }: { filtersApi: EventFiltersApi }) {
   const { controls } = useLiveStreamContext();
   const paused = useLiveSelector((s) => s.paused);
-  const capacity = useLiveSelector((s) => s.capacity);
-  const flushIntervalMs = useLiveSelector((s) => s.flushIntervalMs);
-
   const togglePause = useCallback(
     () => (paused ? controls.resume() : controls.pause()),
     [paused, controls],
   );
-
-  const { filters, toggleSeverity, setWindowMs, setQuery } = filtersApi;
   return (
-    <Controls
+    <TimeControls
+      windowMs={filtersApi.filters.windowMs}
+      onWindowChange={filtersApi.setWindowMs}
       paused={paused}
       onTogglePause={togglePause}
+    />
+  );
+}
+
+export function LiveControls({ filtersApi }: { filtersApi: EventFiltersApi }) {
+  const { controls } = useLiveStreamContext();
+  const capacity = useLiveSelector((s) => s.capacity);
+  const flushIntervalMs = useLiveSelector((s) => s.flushIntervalMs);
+  const { filters, toggleSeverity, setQuery } = filtersApi;
+  return (
+    <FilterBar
       severities={filters.severities}
       onToggleSeverity={toggleSeverity}
-      windowMs={filters.windowMs}
-      onWindowChange={setWindowMs}
       query={filters.query}
       onQueryChange={setQuery}
       bufferSize={capacity}

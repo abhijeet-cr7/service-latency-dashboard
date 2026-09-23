@@ -1,10 +1,12 @@
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { memo, useCallback, useLayoutEffect, useRef, useState } from 'react';
 import type { LiveEvent } from '../types/event';
-import { formatMs, formatNumber, formatTime } from '../utils/helpers';
-import { SeverityBadge } from './StatusBadge';
+import { formatNumber, formatTime } from '../utils/helpers';
+import { SeverityLabel } from './StatusBadge';
 
-const EVENT_ROW_HEIGHT = 52;
+const EVENT_ROW_HEIGHT = 30;
+
+const formatTimestamp = (ts: number) => `${formatTime(ts)}.${String(ts % 1000).padStart(3, '0')}`;
 
 interface EventsListProps {
   /** Events oldest → newest (buffer order). Rendered newest first without copying. */
@@ -19,7 +21,7 @@ interface EventsListProps {
  * Every stream-supplied string is rendered as a React text child (auto-escaped)
  * and never as HTML.
  */
-export const EventsList = memo(function EventsList({ events, height = 420 }: EventsListProps) {
+export const EventsList = memo(function EventsList({ events, height = 360 }: EventsListProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const count = events.length;
   const at = useCallback((i: number) => events[count - 1 - i] as LiveEvent, [events, count]);
@@ -68,15 +70,22 @@ export const EventsList = memo(function EventsList({ events, height = 420 }: Eve
   }
 
   return (
-    <div className="events">
+    <div className="logs">
+      <div className="logs__head" aria-hidden="true">
+        <span>Date</span>
+        <span>Status</span>
+        <span>Service</span>
+        <span className="num">Latency</span>
+        <span>Message</span>
+      </div>
       {anchorId !== null && (
-        <button type="button" className="events__jump btn btn--small" onClick={jumpToLatest}>
-          ↑ {unseen > 0 ? `${formatNumber(unseen)} new events` : 'Jump to latest'}
+        <button type="button" className="logs__jump" onClick={jumpToLatest}>
+          {unseen > 0 ? `Show ${formatNumber(unseen)} new events` : 'Back to latest'}
         </button>
       )}
       <div
         ref={scrollRef}
-        className="events__scroll"
+        className="logs__scroll"
         style={{ height }}
         onScroll={onScroll}
         role="list"
@@ -109,21 +118,21 @@ interface EventRowProps {
 const EventRow = memo(function EventRow({ event, top, position, total }: EventRowProps) {
   return (
     <div
-      className={`event event--${event.severity}`}
+      className={`log log--${event.severity}`}
       style={{ transform: `translateY(${top}px)`, height: EVENT_ROW_HEIGHT }}
       role="listitem"
       aria-posinset={position}
       aria-setsize={total}
     >
-      <time className="event__time" dateTime={new Date(event.ts).toISOString()}>
-        {formatTime(event.ts)}
+      <time className="log__time" dateTime={new Date(event.ts).toISOString()}>
+        {formatTimestamp(event.ts)}
       </time>
-      <SeverityBadge severity={event.severity} />
-      <span className="event__source">{event.source}</span>
-      <span className="event__message" title={event.message}>
+      <SeverityLabel severity={event.severity} />
+      <span className="log__service">{event.source}</span>
+      <span className="log__latency num">{event.latencyMs.toFixed(1)} ms</span>
+      <span className="log__message" title={event.message}>
         {event.message || '(no message)'}
       </span>
-      <span className="event__latency">{formatMs(event.latencyMs)}</span>
     </div>
   );
 });

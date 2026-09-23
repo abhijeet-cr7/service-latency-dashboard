@@ -1,29 +1,54 @@
+import { DashboardIcon, MarkIcon } from '../components/Icons';
 import { useEventFilters } from '../hooks/useEventFilters';
-import { LiveConnectionBar } from './LiveConnectionBar';
-import { LiveControls } from './LiveControls';
+import { LiveConnectionBanner, LiveConnectionBar } from './LiveConnectionBar';
+import { LiveControls, LiveTimeControls } from './LiveControls';
 import { LivePanels } from './LivePanels';
 import { LiveSimulator } from './LiveSimulator';
 
 /**
- * Page layout. It owns filter state only, so it re-renders on filter changes
+ * Page shell. It owns filter state only, so it re-renders on filter changes
  * and never on stream data. Each child subscribes to its own store slice.
  */
 export function Dashboard() {
   const filtersApi = useEventFilters();
   return (
-    <div className="app">
-      <header className="app__header">
-        <div>
-          <h1 className="app__title">Live Monitoring</h1>
-          <p className="app__subtitle">Service latency and events, updated in real time</p>
+    <div className="shell">
+      <nav className="rail" aria-label="Primary">
+        <span className="rail__mark" title="Live Monitoring">
+          <MarkIcon />
+        </span>
+        <span className="rail__item is-active" title="Dashboards" aria-current="page">
+          <DashboardIcon />
+          <span className="sr-only">Dashboards</span>
+        </span>
+      </nav>
+
+      <div className="page">
+        <header className="topbar">
+          <div className="crumbs">
+            <span className="crumbs__parent">Dashboards</span>
+            <span className="crumbs__sep" aria-hidden="true">
+              /
+            </span>
+            <h1 className="crumbs__title">Service Latency · Live</h1>
+          </div>
+          <div className="topbar__right">
+            <LiveConnectionBar />
+            <LiveTimeControls filtersApi={filtersApi} />
+          </div>
+        </header>
+
+        <LiveConnectionBanner />
+
+        <div className="tvbar">
+          <LiveControls filtersApi={filtersApi} />
+          <LiveSimulator />
         </div>
-        <LiveConnectionBar />
-      </header>
-      <LiveSimulator />
-      <LiveControls filtersApi={filtersApi} />
-      <main>
-        <LivePanels filters={filtersApi.filters} />
-      </main>
+
+        <main className="board">
+          <LivePanels filters={filtersApi.filters} />
+        </main>
+      </div>
     </div>
   );
 }

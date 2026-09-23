@@ -31,16 +31,17 @@ export const config: AppConfig = {
 
 export interface TimeWindow {
   readonly label: string;
+  readonly longLabel: string;
   /** null = the whole in-memory buffer */
   readonly ms: number | null;
 }
 
 export const TIME_WINDOWS: readonly TimeWindow[] = [
-  { label: '30s', ms: 30_000 },
-  { label: '1m', ms: 60_000 },
-  { label: '5m', ms: 300_000 },
-  { label: '15m', ms: 900_000 },
-  { label: 'All', ms: null },
+  { label: '30s', longLabel: 'Past 30 Seconds', ms: 30_000 },
+  { label: '1m', longLabel: 'Past 1 Minute', ms: 60_000 },
+  { label: '5m', longLabel: 'Past 5 Minutes', ms: 300_000 },
+  { label: '15m', longLabel: 'Past 15 Minutes', ms: 900_000 },
+  { label: 'All', longLabel: 'Entire Buffer', ms: null },
 ];
 
 export const DEFAULT_WINDOW_MS = 60_000;

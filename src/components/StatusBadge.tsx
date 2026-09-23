@@ -1,23 +1,18 @@
 import { memo } from 'react';
 import type { ServiceStatus, Severity } from '../types/event';
 
-// Colour never carries meaning alone: each badge pairs an icon glyph with a text label.
-const SEVERITY_ICON: Record<Severity, string> = {
-  info: 'ℹ',
-  warning: '▲',
-  error: '✕',
-  critical: '⬣',
+const SEVERITY_TEXT: Record<Severity, string> = {
+  info: 'Info',
+  warning: 'Warn',
+  error: 'Error',
+  critical: 'Critical',
 };
 
-const STATUS_ICON: Record<ServiceStatus, string> = { ok: '●', degraded: '◐', down: '○' };
+const STATUS_TEXT: Record<ServiceStatus, string> = { ok: 'OK', degraded: 'Degraded', down: 'Down' };
 
-export const SeverityBadge = memo(function SeverityBadge({ severity }: { severity: Severity }) {
-  return (
-    <span className={`badge badge--${severity}`}>
-      <span aria-hidden="true">{SEVERITY_ICON[severity]}</span>
-      {severity}
-    </span>
-  );
+/** Severity as coloured text. The word carries the meaning; colour only reinforces it. */
+export const SeverityLabel = memo(function SeverityLabel({ severity }: { severity: Severity }) {
+  return <span className={`sev sev--${severity}`}>{SEVERITY_TEXT[severity]}</span>;
 });
 
 export const ServiceStatusLabel = memo(function ServiceStatusLabel({
@@ -27,8 +22,8 @@ export const ServiceStatusLabel = memo(function ServiceStatusLabel({
 }) {
   return (
     <span className={`svc svc--${status}`}>
-      <span aria-hidden="true">{STATUS_ICON[status]}</span>
-      {status}
+      <span className="svc__dot" aria-hidden="true" />
+      {STATUS_TEXT[status]}
     </span>
   );
 });

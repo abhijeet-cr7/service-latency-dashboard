@@ -13,22 +13,14 @@ const LABELS: Record<DisplayStatus, string> = {
 
 interface ConnectionBarProps {
   readonly status: DisplayStatus;
-  readonly connection: ConnectionInfo;
   readonly pendingWhilePaused: number;
-  readonly sourceLabel: string;
-  readonly onRetry: () => void;
 }
 
-/** Visible connection indicator with a retry countdown and a manual retry action. */
+/** Compact connection indicator for the top bar. */
 export const ConnectionBar = memo(function ConnectionBar({
   status,
-  connection,
   pendingWhilePaused,
-  sourceLabel,
-  onRetry,
 }: ConnectionBarProps) {
-  const canRetry = status === 'error' || status === 'reconnecting';
-
   return (
     <div
       className={`conn conn--${status}`}
@@ -36,37 +28,43 @@ export const ConnectionBar = memo(function ConnectionBar({
       aria-live="polite"
       aria-label="Connection status"
     >
-      <span className="conn__pill">
-        <span className="conn__dot" aria-hidden="true" />
-        {LABELS[status]}
-      </span>
-      <span className="conn__detail">
-        {status === 'paused' && (
-          <>
-            {formatNumber(pendingWhilePaused)} new event{pendingWhilePaused === 1 ? '' : 's'} since
-            pausing. Resume to catch up
-          </>
-        )}
-        {status === 'live' && <>Streaming from {sourceLabel}</>}
-        {status === 'connecting' && <>Opening connection to {sourceLabel}…</>}
-        {status === 'reconnecting' && (
-          <>
-            {connection.errorMessage}{' '}
-            <RetryCountdown nextRetryAt={connection.nextRetryAt} attempt={connection.attempt} />
-          </>
-        )}
-        {status === 'error' && connection.errorMessage}
-      </span>
-      {canRetry && (
-        <button type="button" className="btn btn--small" onClick={onRetry}>
-          Retry now
-        </button>
+      <span className="conn__dot" aria-hidden="true" />
+      <span className="conn__label">{LABELS[status]}</span>
+      {status === 'paused' && (
+        <span className="conn__detail">
+          {formatNumber(pendingWhilePaused)} new event{pendingWhilePaused === 1 ? '' : 's'}
+        </span>
       )}
     </div>
   );
 });
 
-/** Isolated so its 250ms tick re-renders only this text, not the whole bar. */
+interface ConnectionBannerProps {
+  readonly connection: ConnectionInfo;
+  readonly onRetry: () => void;
+}
+
+/** Full-width notice shown only while the feed is reconnecting or down. */
+export const ConnectionBanner = memo(function ConnectionBanner({
+  connection,
+  onRetry,
+}: ConnectionBannerProps) {
+  const { status, errorMessage, nextRetryAt, attempt } = connection;
+  if (status !== 'reconnecting' && status !== 'error') return null;
+  return (
+    <div className={`banner banner--${status}`}>
+      <span className="banner__text">
+        {errorMessage}{' '}
+        {status === 'reconnecting' && <RetryCountdown nextRetryAt={nextRetryAt} attempt={attempt} />}
+      </span>
+      <button type="button" className="btn btn--sm" onClick={onRetry}>
+        Retry now
+      </button>
+    </div>
+  );
+});
+
+/** Isolated so its 250ms tick re-renders only this text. */
 const RetryCountdown = memo(function RetryCountdown({
   nextRetryAt,
   attempt,
@@ -75,10 +73,10 @@ const RetryCountdown = memo(function RetryCountdown({
   attempt: number;
 }) {
   const now = useNow(nextRetryAt !== null);
-  if (nextRetryAt === null) return <span className="conn__countdown">(attempt {attempt})</span>;
+  if (nextRetryAt === null) return <span className="banner__meta">(attempt {attempt})</span>;
   const seconds = Math.max(0, Math.ceil((nextRetryAt - now) / 1000));
   return (
-    <span className="conn__countdown">
+    <span className="banner__meta">
       (attempt {attempt}, retrying in {seconds}s)
     </span>
   );
