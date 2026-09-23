@@ -543,7 +543,7 @@ p {
 /* ---------- Chart ---------- */
 .chart {
   width: 100%;
-  min-height: 260px;
+  min-height: 340px;
 }
 
 .chart .u-legend {
@@ -587,6 +587,8 @@ p {
   grid-template-columns: auto auto minmax(0, 1fr) auto;
   grid-template-rows: auto auto;
   column-gap: 10px;
+  row-gap: 2px;
+  overflow: hidden;
   align-content: center;
   padding: 0 12px;
   border-bottom: 1px solid var(--border);
@@ -605,6 +607,11 @@ p {
   background: color-mix(in srgb, var(--critical-bg) 50%, transparent);
 }
 
+.event__time,
+.event .badge {
+  grid-row: 1;
+}
+
 .event__time {
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
@@ -613,6 +620,7 @@ p {
 }
 
 .event__source {
+  grid-row: 1;
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
@@ -621,6 +629,8 @@ p {
 }
 
 .event__latency {
+  grid-column: 4;
+  grid-row: 1;
   font-variant-numeric: tabular-nums;
   color: var(--text-secondary);
   text-align: right;
@@ -629,6 +639,7 @@ p {
 
 .event__message {
   grid-column: 1 / -1;
+  grid-row: 2;
   color: var(--text-secondary);
   white-space: nowrap;
   overflow: hidden;

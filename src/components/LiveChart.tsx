@@ -34,8 +34,8 @@ function buildOptions(el: HTMLElement, width: number, height: number): uPlot.Opt
     axes: [axis, { ...axis, size: 56, values: (_u, vals) => vals.map((v) => `${v} ms`) }],
     series: [
       {},
-      { label: 'Avg latency', stroke: s1, width: 2, spanGaps: false, value: fmt, points: { show: false } },
-      { label: 'Max latency', stroke: s2, width: 1.5, dash: [4, 3], value: fmt, points: { show: false } },
+      { label: 'Avg latency', stroke: s1, width: 2, spanGaps: false, value: fmt },
+      { label: 'Max latency', stroke: s2, width: 1.5, dash: [4, 3], value: fmt },
     ],
     legend: { live: true },
   };
@@ -46,7 +46,7 @@ function buildOptions(el: HTMLElement, width: number, height: number): uPlot.Opt
  * `setData`, which redraws one canvas and never reconciles DOM nodes per
  * point, so the chart stays smooth at any message rate.
  */
-export const LiveChart = memo(function LiveChart({ data, height = 260, label }: LiveChartProps) {
+export const LiveChart = memo(function LiveChart({ data, height = 340, label }: LiveChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const plotRef = useRef<uPlot | null>(null);
 

@@ -38,8 +38,8 @@ export const ConnectionBar = memo(function ConnectionBar({
       <span className="conn__detail">
         {status === 'paused' && (
           <>
-            {formatNumber(pendingWhilePaused)} new event{pendingWhilePaused === 1 ? '' : 's'} held
-            while paused
+            {formatNumber(pendingWhilePaused)} new event{pendingWhilePaused === 1 ? '' : 's'} since
+            pausing. Resume to catch up
           </>
         )}
         {status === 'live' && <>Streaming from {sourceLabel}</>}
@@ -70,7 +70,7 @@ const RetryCountdown = memo(function RetryCountdown({
   attempt: number;
 }) {
   const now = useNow(nextRetryAt !== null);
-  if (nextRetryAt === null) return null;
+  if (nextRetryAt === null) return <span className="conn__countdown">(attempt {attempt})</span>;
   const seconds = Math.max(0, Math.ceil((nextRetryAt - now) / 1000));
   return (
     <span className="conn__countdown">

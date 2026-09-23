@@ -58,6 +58,15 @@ export function LivePanels({ filters }: { filters: EventFilters }) {
     TIME_WINDOWS.find((w) => w.ms === deferredFilters.windowMs)?.label ?? 'custom';
   const windowText = deferredFilters.windowMs === null ? 'Whole buffer' : `Last ${windowLabel}`;
 
+  // At high rates a bounded buffer can hold less history than the window asks for. Say so.
+  const bufferSpanMs = events.length > 0 ? asOf - (events[0]?.ts ?? asOf) : 0;
+  const bufferFull = events.length >= capacity;
+  const truncated =
+    bufferFull && deferredFilters.windowMs !== null && bufferSpanMs < deferredFilters.windowMs;
+  const chartSubtitle = truncated
+    ? `${windowText} · buffer holds only the last ${formatNumber(bufferSpanMs / 1000)}s at this rate. Raise the buffer size for more`
+    : `${windowText} · avg & max per interval`;
+
   if (!hasData) {
     if (status === 'error') {
       return (
@@ -105,7 +114,7 @@ export function LivePanels({ filters }: { filters: EventFilters }) {
         />
       </ErrorBoundary>
 
-      <Panel title="Latency" subtitle={`${windowText} · avg & max per interval`} className="grid__chart">
+      <Panel title="Latency" subtitle={chartSubtitle} className="grid__chart">
         <ErrorBoundary FallbackComponent={ErrorFallback}>
           {noMatches ? (
             <EmptyState title="No data in this window" hint="Widen the time window or clear filters." />

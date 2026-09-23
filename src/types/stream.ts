@@ -52,7 +52,7 @@ export interface LiveSnapshot {
   readonly stats: StreamStats;
   readonly connection: ConnectionInfo;
   readonly paused: boolean;
-  /** Events received while paused but not yet shown. */
+  /** Events received while paused (not yet shown; only the newest `capacity` are kept). */
   readonly pendingWhilePaused: number;
   /** Clock used for time windows. Frozen while paused so views stay consistent. */
   readonly asOf: number;

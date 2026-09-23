@@ -54,6 +54,7 @@ const HOSTILE = [
 ];
 
 const TICK_MS = 50;
+const MAX_CATCH_UP_MS = 2_000;
 
 export function createSimulator(options: SimulatorOptions = {}): {
   factory: () => Transport;
@@ -120,6 +121,7 @@ export function createSimulator(options: SimulatorOptions = {}): {
     let timers: ReturnType<typeof setTimeout>[] = [];
     let interval: ReturnType<typeof setInterval> | null = null;
     let carry = 0;
+    let lastTick = 0;
     let stalled = false;
 
     const cleanup = () => {
@@ -151,17 +153,23 @@ export function createSimulator(options: SimulatorOptions = {}): {
               return;
             }
             handlers?.onOpen();
+            lastTick = Date.now();
             interval = setInterval(() => {
-              if (!handlers || stalled) return;
               const now = Date.now();
-              carry += (rate * TICK_MS) / 1000;
+              // Emit by elapsed wall time, not tick count: browsers throttle timers in
+              // background tabs, and a real socket keeps delivering. Cap the catch-up at
+              // MAX_CATCH_UP_MS so the backlog stays bounded.
+              const elapsed = Math.min(now - lastTick, MAX_CATCH_UP_MS);
+              lastTick = now;
+              if (!handlers || stalled) return;
+              carry += (rate * elapsed) / 1000;
               const n = Math.floor(carry);
               carry -= n;
               for (let i = 0; i < n && handlers; i += 1) {
                 handlers.onMessage(Math.random() < malformedRate ? makeMalformed(now) : makeEvent(now));
               }
               // Poisson-ish random drop.
-              if (meanDropS > 0 && Math.random() < TICK_MS / 1000 / meanDropS) drop();
+              if (meanDropS > 0 && Math.random() < elapsed / 1000 / meanDropS) drop();
             }, TICK_MS);
           }, 250 + Math.random() * 500),
         );

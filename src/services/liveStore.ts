@@ -97,7 +97,7 @@ export class LiveStore {
       this.ids.delete(evicted.id);
     }
     this.received += 1;
-    if (this.snapshot.paused) this.pending = Math.min(this.pending + 1, this.buffer.capacity);
+    if (this.snapshot.paused) this.pending += 1;
     this.dirty = true;
   }
 
