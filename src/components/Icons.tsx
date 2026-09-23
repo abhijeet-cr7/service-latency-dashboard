@@ -43,15 +43,6 @@ export const SearchIcon = (p: IconProps) => (
   </svg>
 );
 
-export const DashboardIcon = (p: IconProps) => (
-  <svg {...base(p)}>
-    <rect x="2.5" y="2.5" width="4.5" height="5.5" rx="0.5" />
-    <rect x="9" y="2.5" width="4.5" height="3" rx="0.5" />
-    <rect x="9" y="7.5" width="4.5" height="6" rx="0.5" />
-    <rect x="2.5" y="10" width="4.5" height="3.5" rx="0.5" />
-  </svg>
-);
-
 /** Neutral product mark (a pulse line). */
 export const MarkIcon = (p: IconProps) => (
   <svg {...base({ width: 22, height: 22, viewBox: '0 0 22 22', ...p })}>

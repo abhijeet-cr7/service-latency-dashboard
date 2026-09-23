@@ -1,4 +1,4 @@
-import { DashboardIcon, MarkIcon } from '../components/Icons';
+import { MarkIcon } from '../components/Icons';
 import { useEventFilters } from '../hooks/useEventFilters';
 import { LiveConnectionBanner, LiveConnectionBar } from './LiveConnectionBar';
 import { LiveControls, LiveTimeControls } from './LiveControls';
@@ -13,19 +13,12 @@ export function Dashboard() {
   const filtersApi = useEventFilters();
   return (
     <div className="shell">
-      <nav className="rail" aria-label="Primary">
-        <span className="rail__mark" title="Live Monitoring">
-          <MarkIcon />
-        </span>
-        <span className="rail__item is-active" title="Dashboards" aria-current="page">
-          <DashboardIcon />
-          <span className="sr-only">Dashboards</span>
-        </span>
-      </nav>
-
       <div className="page">
         <header className="topbar">
           <div className="crumbs">
+            <span className="brand" aria-hidden="true">
+              <MarkIcon />
+            </span>
             <span className="crumbs__parent">Dashboards</span>
             <span className="crumbs__sep" aria-hidden="true">
               /

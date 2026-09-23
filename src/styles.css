@@ -20,8 +20,6 @@
   --brand: #632ca6;
   --brand-hover: #54248f;
   --brand-soft: #efe8f8;
-  --rail: #23143a;
-  --rail-ink: #b7a6d3;
   --focus: #7b4fc6;
 
   --series-1: #7b4fc6;
@@ -72,8 +70,6 @@
     --brand: #8f63d8;
     --brand-hover: #a07ae0;
     --brand-soft: #2d2540;
-    --rail: #120b1f;
-    --rail-ink: #a594c4;
     --focus: #a07ae0;
     --series-1: #9c7ae0;
     --series-2: #d9742a;
@@ -109,8 +105,6 @@
   --brand: #8f63d8;
   --brand-hover: #a07ae0;
   --brand-soft: #2d2540;
-  --rail: #120b1f;
-  --rail-ink: #a594c4;
   --focus: #a07ae0;
   --series-1: #9c7ae0;
   --series-2: #d9742a;
@@ -189,47 +183,10 @@ select {
 }
 
 /* =========================================================================
-   Shell: nav rail + page
+   Shell
    ========================================================================= */
 .shell {
-  display: grid;
-  grid-template-columns: 48px minmax(0, 1fr);
   min-height: 100vh;
-}
-
-.rail {
-  background: var(--rail);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 10px 0;
-  position: sticky;
-  top: 0;
-  height: 100vh;
-}
-
-.rail__mark {
-  color: #fff;
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  margin-bottom: 12px;
-}
-
-.rail__item {
-  color: var(--rail-ink);
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius);
-}
-
-.rail__item.is-active {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.12);
 }
 
 .page {
@@ -255,6 +212,23 @@ select {
   align-items: baseline;
   gap: 6px;
   min-width: 0;
+}
+
+.brand {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  align-self: center;
+  margin-right: 4px;
+  border-radius: var(--radius);
+  background: var(--brand);
+  color: #fff;
+}
+
+.brand svg {
+  width: 18px;
+  height: 18px;
 }
 
 .crumbs__parent {
@@ -1080,12 +1054,6 @@ select {
 }
 
 @media (max-width: 640px) {
-  .shell {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .rail {
-    display: none;
-  }
   .topbar,
   .tvbar,
   .banner {

@@ -159,7 +159,7 @@ props.
 3. **React wiring**: `useLiveStream`, provider, per-slice selectors.
 4. **Dashboard UI**: KPI cards, chart, virtualized list, connection bar, controls, loading, empty and
    error states, responsive styling (light/dark).
-7. **Visual redesign**: observability-tool styling (nav rail, time picker, template variables,
+7. **Visual redesign**: observability-tool styling (time picker, template variables,
    threshold query values, top list, log-explorer event stream).
 5. **Tests**: unit, integration (fake socket) and render-budget tests.
 6. **Hardening & docs**: CSP check on the production build, this README.
