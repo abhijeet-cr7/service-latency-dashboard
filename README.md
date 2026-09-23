@@ -28,7 +28,8 @@ backend is needed.
 | `npm run lint` | ESLint, including security rules (see below) |
 | `npm run typecheck` | `tsc -b --noEmit` |
 
-Requirements: Node 20+ (developed on Node 26).
+Requirements: **Node 22.12+** (or 24+), as Vite 8, Vitest 5 and jsdom require. Developed on Node 26. With nvm:
+`nvm use` picks up `.nvmrc`.
 
 ### Configuration (all optional)
 
