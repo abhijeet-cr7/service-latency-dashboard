@@ -28,3 +28,19 @@ export const config: AppConfig = {
   staleTimeoutMs: 8_000,
   stableAfterMs: 5_000,
 };
+
+export interface TimeWindow {
+  readonly label: string;
+  /** null = the whole in-memory buffer */
+  readonly ms: number | null;
+}
+
+export const TIME_WINDOWS: readonly TimeWindow[] = [
+  { label: '30s', ms: 30_000 },
+  { label: '1m', ms: 60_000 },
+  { label: '5m', ms: 300_000 },
+  { label: '15m', ms: 900_000 },
+  { label: 'All', ms: null },
+];
+
+export const DEFAULT_WINDOW_MS = 60_000;

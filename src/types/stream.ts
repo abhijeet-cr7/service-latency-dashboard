@@ -39,6 +39,8 @@ export interface StreamStats {
   readonly evicted: number;
   /** Frames dropped unparsed by the flood limiter. */
   readonly dropped: number;
+  /** Events rejected because their id is already in the buffer (replays). */
+  readonly duplicates: number;
   /** Events per second over the recent sliding window. */
   readonly ratePerSec: number;
 }

@@ -36,6 +36,9 @@ export class LiveStore {
   private malformed = 0;
   private evicted = 0;
   private dropped = 0;
+  private duplicates = 0;
+  /** Ids currently in the buffer; kept in sync with evictions so it stays bounded. */
+  private readonly ids = new Set<string>();
   private pending = 0;
   private dirty = false;
   private lastCommitAt = 0;
@@ -49,7 +52,7 @@ export class LiveStore {
     this.now = now;
     this.snapshot = {
       events: [],
-      stats: { received: 0, malformed: 0, evicted: 0, dropped: 0, ratePerSec: 0 },
+      stats: { received: 0, malformed: 0, evicted: 0, dropped: 0, duplicates: 0, ratePerSec: 0 },
       connection: { status: 'connecting', attempt: 0, nextRetryAt: null, errorMessage: null },
       paused: false,
       pendingWhilePaused: 0,
@@ -74,15 +77,25 @@ export class LiveStore {
     this.timer = setInterval(() => this.flush(), this.flushIntervalMs);
   }
 
-  dispose(): void {
+  /** Stops the flush timer. Subscribers stay registered, so StrictMode's remount is safe. */
+  stop(): void {
     if (this.timer) clearInterval(this.timer);
     this.timer = null;
-    this.listeners.clear();
   }
 
   // ---- writes from the stream (hot path: keep O(1)) ----
   ingest(event: LiveEvent): void {
-    if (this.buffer.push(event)) this.evicted += 1;
+    if (this.ids.has(event.id)) {
+      this.duplicates += 1;
+      this.dirty = true;
+      return;
+    }
+    this.ids.add(event.id);
+    const evicted = this.buffer.push(event);
+    if (evicted) {
+      this.evicted += 1;
+      this.ids.delete(evicted.id);
+    }
     this.received += 1;
     if (this.snapshot.paused) this.pending = Math.min(this.pending + 1, this.buffer.capacity);
     this.dirty = true;
@@ -120,7 +133,7 @@ export class LiveStore {
 
   setCapacity(capacity: number): void {
     if (capacity === this.buffer.capacity) return;
-    this.buffer.resize(capacity);
+    this.buffer.resize(capacity).forEach((e) => this.ids.delete(e.id));
     this.dirty = true;
     this.commit({ capacity });
     this.flush();
@@ -158,6 +171,7 @@ export class LiveStore {
       malformed: this.malformed,
       evicted: this.evicted,
       dropped: this.dropped,
+      duplicates: this.duplicates,
       ratePerSec,
     };
     const statsChanged =
@@ -165,6 +179,7 @@ export class LiveStore {
       stats.received !== prev.stats.received ||
       stats.malformed !== prev.stats.malformed ||
       stats.dropped !== prev.stats.dropped ||
+      stats.duplicates !== prev.stats.duplicates ||
       stats.evicted !== prev.stats.evicted;
 
     this.commit({
