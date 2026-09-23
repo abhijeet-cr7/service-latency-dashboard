@@ -14,16 +14,9 @@ import {
   computeKpis,
   filterEvents,
   formatNumber,
+  pickBucketMs,
   type EventFilters,
 } from '../utils/helpers';
-
-const BUCKET_STEPS_MS = [1_000, 2_000, 5_000, 10_000, 15_000, 30_000, 60_000];
-const MAX_CHART_POINTS = 300;
-
-/** Picks a bucket size so the chart never draws more than ~300 points. */
-export function pickBucketMs(spanMs: number): number {
-  return BUCKET_STEPS_MS.find((b) => spanMs / b <= MAX_CHART_POINTS) ?? 60_000;
-}
 
 /**
  * The only part of the page that re-renders on data flushes (at most once per

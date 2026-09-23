@@ -121,6 +121,14 @@ export function computeKpis(events: readonly LiveEvent[]): KpiSummary {
   };
 }
 
+const BUCKET_STEPS_MS = [1_000, 2_000, 5_000, 10_000, 15_000, 30_000, 60_000];
+const MAX_CHART_POINTS = 300;
+
+/** Picks a bucket size so the chart never draws more than ~300 points, whatever the window. */
+export function pickBucketMs(spanMs: number): number {
+  return BUCKET_STEPS_MS.find((b) => spanMs / b <= MAX_CHART_POINTS) ?? 60_000;
+}
+
 export interface SeriesData {
   /** Bucket start times, in seconds (uPlot's x unit). */
   readonly x: number[];

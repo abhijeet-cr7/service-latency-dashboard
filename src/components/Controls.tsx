@@ -18,7 +18,7 @@ interface ControlsProps {
   readonly onFlushIntervalChange: (ms: number) => void;
 }
 
-export const MAX_QUERY_LENGTH = 80;
+const MAX_QUERY_LENGTH = 80;
 
 /** Toolbar: pause/resume, filters, time window, and performance tuning. Stateless. */
 export const Controls = memo(function Controls(props: ControlsProps) {

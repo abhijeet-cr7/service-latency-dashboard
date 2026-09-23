@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import { formatNumber } from '../utils/helpers';
 
-export const SIMULATOR_RATES = [5, 25, 250, 2_000, 10_000] as const;
+const SIMULATOR_RATES = [5, 25, 250, 2_000, 10_000] as const;
 
 interface SimulatorPanelProps {
   readonly rate: number;

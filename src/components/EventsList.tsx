@@ -4,7 +4,7 @@ import type { LiveEvent } from '../types/event';
 import { formatMs, formatNumber, formatTime } from '../utils/helpers';
 import { SeverityBadge } from './StatusBadge';
 
-export const EVENT_ROW_HEIGHT = 52;
+const EVENT_ROW_HEIGHT = 52;
 
 interface EventsListProps {
   /** Events oldest → newest (buffer order). Rendered newest first without copying. */
