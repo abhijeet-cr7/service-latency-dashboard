@@ -10,7 +10,8 @@ interface LoadingProps {
 export const Loading = memo(function Loading({ label = 'Loading…', skeletonHeight }: LoadingProps) {
   if (skeletonHeight !== undefined) {
     return (
-      <div className="skeleton" style={{ height: skeletonHeight }} role="status" aria-label={label} />
+      // Decorative placeholder: the panel's spinner (role=status) announces loading once.
+      <div className="skeleton" style={{ height: skeletonHeight }} aria-hidden="true" data-label={label} />
     );
   }
   return (

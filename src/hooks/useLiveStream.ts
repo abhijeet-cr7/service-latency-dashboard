@@ -40,9 +40,9 @@ const MAX_MESSAGES_PER_SECOND = 20_000;
  * Components subscribe to just the slice they need through `useLiveSelector`,
  * so a fast-changing widget cannot re-render the rest of the page.
  */
-export function useLiveStream(config: AppConfig): LiveStreamHandle {
+export function useLiveStream(config: AppConfig, sourceOverride?: StreamSource): LiveStreamHandle {
   // Lazy init: created exactly once per mount, with stable identity.
-  const [source] = useState(() => createStreamSource(config));
+  const [source] = useState(() => sourceOverride ?? createStreamSource(config));
   const [store] = useState(
     () => new LiveStore({ capacity: config.bufferSize, flushIntervalMs: config.flushIntervalMs }),
   );

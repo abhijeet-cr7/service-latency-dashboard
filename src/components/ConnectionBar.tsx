@@ -30,7 +30,12 @@ export const ConnectionBar = memo(function ConnectionBar({
   const canRetry = status === 'error' || status === 'reconnecting';
 
   return (
-    <div className={`conn conn--${status}`} role="status" aria-live="polite">
+    <div
+      className={`conn conn--${status}`}
+      role="status"
+      aria-live="polite"
+      aria-label="Connection status"
+    >
       <span className="conn__pill">
         <span className="conn__dot" aria-hidden="true" />
         {LABELS[status]}
